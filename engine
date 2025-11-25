@@ -1,0 +1,181 @@
+// ENGINE.SRC - Main game engine
+// Coordinates all subsystems: rendering, entities, input, game loop
+
+Engine = {}
+
+Engine.create = function(term_manager, width, height)
+	// If caller didn't provide a terminal manager, create a default one (if available)
+	if (not term_manager) and TerminalManager then
+		term_manager = TerminalManager.create
+	end if
+	this.term_manager = term_manager
+	this.screen = Screen.create(term_manager, width, height)
+	this.scene_manager = SceneManager.create
+	this.input_manager = InputManager.create
+
+	this.running = false
+	this.paused = false
+	this.frame_count = 0
+	this.time_elapsed = 0
+	this.delta_time = 0.016
+	this.target_fps = 60
+	this.frame_time = 1 / this.target_fps
+
+	this.update_callback = null
+	this.render_callback = null
+
+	return this
+end function
+
+Engine.initialize = function
+	// Initialize all subsystems
+	return true
+end function
+
+Engine.shutdown = function
+	// Clean up resources
+	if this.scene_manager then
+		scene = this.scene_manager.get_active_scene
+		if scene then
+			scene.clear
+		end if
+	end if
+end function
+
+Engine.set_target_fps = function(fps)
+	this.target_fps = fps
+	this.frame_time = 1 / fps
+end function
+
+Engine.get_frame_time = function
+	return this.frame_time
+end function
+
+Engine.set_update_callback = function(callback)
+	this.update_callback = callback
+end function
+
+Engine.set_render_callback = function(callback)
+	this.render_callback = callback
+end function
+
+Engine.start = function
+	this.running = true
+	this.frame_count = 0
+	this.time_elapsed = 0
+end function
+
+Engine.stop = function
+	this.running = false
+end function
+
+Engine.pause = function
+	this.paused = true
+end function
+
+Engine.resume = function
+	this.paused = false
+end function
+
+Engine.is_running = function
+	return this.running
+end function
+
+Engine.update = function(delta_time)
+	if this.paused then return 
+
+	this.delta_time = delta_time
+	this.time_elapsed = this.time_elapsed + delta_time
+
+	// Update scene
+	if this.scene_manager then
+		this.scene_manager.update delta_time
+	end if
+
+	// Call user update callback
+	if this.update_callback then
+		this.update_callback delta_time
+	end if
+
+	// Input polling
+	if this.input_manager then
+		this.input_manager.poll null
+	end if
+end function
+
+Engine.render = function
+	this.screen.clear
+
+	// Render scene
+	if this.scene_manager then
+		this.scene_manager.render this.screen
+	end if
+
+	// Call user render callback
+	if this.render_callback then
+		this.render_callback this.screen
+	end if
+
+	// Present to terminal
+	this.screen.render
+end function
+
+Engine.tick = function(delta_time)
+	this.update delta_time
+	this.render
+	this.frame_count = this.frame_count + 1
+end function
+
+Engine.get_scene_manager = function
+	return this.scene_manager
+end function
+
+Engine.get_screen = function
+	return this.screen
+end function
+
+Engine.get_input_manager = function
+	return this.input_manager
+end function
+
+Engine.get_term_manager = function
+	return this.term_manager
+end function
+
+Engine.get_delta_time = function
+	return this.delta_time
+end function
+
+Engine.get_elapsed_time = function
+	return this.time_elapsed
+end function
+
+Engine.get_frame_count = function
+	return this.frame_count
+end function
+
+Engine.get_fps = function
+	if this.time_elapsed == 0 then return 0
+	return this.frame_count / this.time_elapsed
+end function
+
+Engine.add_scene = function(scene)
+	return this.scene_manager.add_scene(scene)
+end function
+
+Engine.remove_scene = function(scene)
+	return this.scene_manager.remove_scene(scene)
+end function
+
+Engine.get_scene = function(name)
+	return this.scene_manager.get_scene
+	name
+end function
+
+Engine.set_active_scene = function(scene)
+	this.scene_manager.set_active_scene scene
+end function
+
+Engine.get_active_scene = function
+	return this.scene_manager.get_active_scene
+end function
