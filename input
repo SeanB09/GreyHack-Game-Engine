@@ -1,0 +1,85 @@
+// INPUT.SRC - Input handling system
+
+InputManager = {}
+
+InputManager.create = function
+	this.key_states = {}
+	this.mouse_pos = {
+		"x": 0,
+		"y": 0,
+	}
+	this.listeners = []
+	this.input_queue = []
+	return this
+end function
+
+InputManager.set_key_state = function(key, pressed)
+	this.key_states[key] = pressed
+end function
+
+InputManager.is_key_down = function(key)
+	return this.key_states[key] == true
+end function
+
+InputManager.was_key_pressed = function(key)
+	// Returns true once per frame key was pressed
+	state = this.key_states[key]
+	if state then
+		this.key_states[key] = false
+		return true
+	end if
+	return false
+end function
+
+InputManager.set_mouse_position = function(x, y)
+	this.mouse_pos.x = x
+	this.mouse_pos.y = y
+end function
+
+InputManager.get_mouse_position = function
+	return this.mouse_pos
+end function
+
+InputManager.add_listener = function(callback)
+	this.listeners.push callback
+end function
+
+InputManager.remove_listener = function(callback)
+	for i in range(0, this.listeners.len)
+		if this.listeners[i] == callback then
+			this.listeners.remove i
+			return true
+		end if
+	end for
+	return false
+end function
+
+InputManager.dispatch_event = function(event_type, data)
+	for i in range(0, this.listeners.len)
+		callback = this.listeners[i]
+		callback event_type, data
+	end for
+end function
+
+InputManager.poll = function(input_device)
+	// Poll from a Grey Hack input device
+	// This would be called each frame to check for input
+	if input_device == null then return 
+
+	// Note: Grey Hack input API would be called here
+	// For now, this is a placeholder for the architecture
+end function
+
+InputManager.clear = function
+	this.key_states = {}
+end function
+
+InputManager.get_pressed_keys = function
+	pressed = []
+	for key in this.key_states
+		if this.key_states[key] then
+			pressed.push key
+		end if
+	end for
+	return pressed
+end function
