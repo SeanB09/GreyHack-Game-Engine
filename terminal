@@ -1,0 +1,145 @@
+// TERMINAL.SRC - Multi-terminal abstraction layer
+// Manages 2000-character output buffers per terminal
+
+Terminal = {}
+
+Terminal.create = function(term_obj)
+	this.handle = term_obj
+	this.width = 80
+	this.height = 24
+	this.buffer = ""
+	this.char_count = 0
+	this.is_dirty = true
+	return this
+end function
+
+Terminal.get_dimensions = function
+	return {
+		"width": this.width,
+		"height": this.height,
+	}
+end function
+
+Terminal.set_dimensions = function(w, h)
+	this.width = w
+	this.height = h
+	this.is_dirty = true
+end function
+
+Terminal.clear = function
+	this.buffer = ""
+	this.char_count = 0
+	this.is_dirty = true
+end function
+
+Terminal.write = function(text)
+	if this.char_count + text.len > 2000 then
+		return false
+	end if
+	this.buffer = this.buffer + text
+	this.char_count = this.char_count + text.len
+	this.is_dirty = true
+	return true
+end function
+
+Terminal.write_line = function(text)
+	line = text + char(10)
+	return this.write(line)
+end function
+
+Terminal.flush = function
+	if this.handle and this.is_dirty then
+		this.handle.print this.buffer
+		this.is_dirty = false
+	end if
+end function
+
+Terminal.set_cursor = function(x, y)
+	if this.handle then
+		this.handle.set_cursor x, y
+	end if
+end function
+
+Terminal.reset_color = function
+	if this.handle then
+		this.handle.set_text_color "#FFFFFF"
+	end if
+end function
+
+Terminal.set_color = function(color)
+	if this.handle then
+		this.handle.set_text_color color
+	end if
+end function
+
+Terminal.get_char_count = function
+	return this.char_count
+end function
+
+Terminal.is_full = function
+	return this.char_count >= 1900
+end function
+
+TerminalManager = {}
+
+TerminalManager.create = function
+    self.terminals = []
+    self.active_terminal = null
+    return self
+end function
+//TerminalManager.create = function
+	//this.terminals = []
+	//this.active_terminal = null
+	//return this
+//end function
+
+TerminalManager.add_terminal = function(term_obj)
+	term = Terminal.create(term_obj)
+	self.terminals.push term
+	if self.active_terminal == null then
+		self.active_terminal = term
+	end if
+	return term
+end function
+
+TerminalManager.get_terminal = function(index)
+	if index < 0 or index >= this.terminals.len then
+		return null
+	end if
+	return this.terminals[index]
+end function
+
+TerminalManager.get_active = function
+	return this.active_terminal
+end function
+
+TerminalManager.set_active = function(index)
+	term = this.get_terminal(index)
+	if term then
+		this.active_terminal = term
+		return true
+	end if
+	return false
+end function
+
+TerminalManager.flush_all = function
+	for i in range(0, this.terminals.len)
+		term = this.terminals[i]
+		if term then
+			term.flush
+		end if
+	end for
+end function
+
+TerminalManager.clear_all = function
+	for i in range(0, this.terminals.len)
+		term = this.terminals[i]
+		if term then
+			term.clear
+		end if
+	end for
+end function
+
+TerminalManager.get_count = function
+	return this.terminals.len
+end function
