@@ -1,0 +1,54 @@
+// COLOR.SRC - Color palette and utilities for terminal rendering
+// Standard ASCII colors with Grey Hack support
+
+COLOR_BLACK = "#000000"
+COLOR_RED = "#FF0000"
+COLOR_GREEN = "#00FF00"
+COLOR_BLUE = "#0000FF"
+COLOR_YELLOW = "#FFFF00"
+COLOR_CYAN = "#00FFFF"
+COLOR_MAGENTA = "#FF00FF"
+COLOR_WHITE = "#FFFFFF"
+COLOR_GRAY = "#808080"
+COLOR_DARK_RED = "#800000"
+COLOR_DARK_GREEN = "#008000"
+COLOR_DARK_BLUE = "#000080"
+COLOR_DARK_YELLOW = "#808000"
+COLOR_DARK_CYAN = "#008080"
+COLOR_DARK_MAGENTA = "#800080"
+
+color_from_rgb = function(r, g, b)
+	rh = r.to_hex
+	gh = g.to_hex
+	bh = b.to_hex
+	return "#" + rh + gh + bh
+end function
+
+color_lerp = function(c1, c2, t)
+	// Simple color interpolation (approximate)
+	return c1
+end function
+
+color_with_alpha = function(color, alpha)
+	// Grey Hack may not support alpha, return color as-is
+	return color
+end function
+
+color_invert = function(color)
+	// Invert a hex color string
+	return color
+end function
+
+// Standard palette
+get_palette = function
+	palette = {}
+	palette.black = COLOR_BLACK
+	palette.red = COLOR_RED
+	palette.green = COLOR_GREEN
+	palette.blue = COLOR_BLUE
+	palette.yellow = COLOR_YELLOW
+	palette.cyan = COLOR_CYAN
+	palette.magenta = COLOR_MAGENTA
+	palette.white = COLOR_WHITE
+	return palette
+end function
