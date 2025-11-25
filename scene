@@ -1,0 +1,212 @@
+// SCENE.SRC - Scene graph and scene management
+
+Scene = {}
+
+Scene.create = function(name)
+	this.name = name
+	this.entities = []
+	this.active = true
+	this.enabled = true
+	this.next_entity_id = 0
+	return this
+end function
+
+Scene.add_entity = function(entity)
+	if this.entities.len >= 1000 then
+		return false
+	end if
+	entity.id = this.next_entity_id
+	this.next_entity_id = this.next_entity_id + 1
+	this.entities.push entity
+	return true
+end function
+
+Scene.remove_entity = function(entity)
+	for i in range(0, this.entities.len)
+		if this.entities[i] == entity then
+			entity.destroy
+			this.entities.remove i
+			return true
+		end if
+	end for
+	return false
+end function
+
+Scene.remove_entity_by_id = function(id)
+	for i in range(0, this.entities.len)
+		if this.entities[i].id == id then
+			this.entities[i].destroy
+			this.entities.remove i
+			return true
+		end if
+	end for
+	return false
+end function
+
+Scene.get_entity = function(id)
+	for i in range(0, this.entities.len)
+		if this.entities[i].id == id then
+			return this.entities[i]
+		end if
+	end for
+	return null
+end function
+
+Scene.find_entities_by_tag = function(tag)
+	result = []
+	for i in range(0, this.entities.len)
+		if this.entities[i].has_tag(tag) then
+			result.push this.entities[i]
+		end if
+	end for
+	return result
+end function
+
+Scene.find_entity_by_name = function(name)
+	for i in range(0, this.entities.len)
+		if this.entities[i].name == name then
+			return this.entities[i]
+		end if
+	end for
+	return null
+end function
+
+Scene.update = function(delta_time)
+	if not this.enabled then return 
+
+	for i in range(0, this.entities.len)
+		entity = this.entities[i]
+		if entity and entity.active then
+			entity.update delta_time
+		end if
+	end for
+
+	// Remove destroyed entities
+	i = 0
+	while i < this.entities.len
+		if not this.entities[i].active then
+			this.entities.remove i
+		else
+			i = i + 1
+		end if
+	end while
+end function
+
+Scene.render = function(screen)
+	if not this.enabled then return 
+
+	// Sort entities by z-order before rendering
+	this.sort_by_z_order
+
+	for i in range(0, this.entities.len)
+		entity = this.entities[i]
+		if entity and entity.active then
+			entity.render screen
+		end if
+	end for
+end function
+
+Scene.sort_by_z_order = function
+	// Bubble sort by z_order (simple but effective for game entities)
+	for i in range(0, this.entities.len)
+		for j in range(0, this.entities.len - i - 1)
+			e1 = this.entities[j]
+			e2 = this.entities[j + 1]
+			z1 = 0
+			z2 = 0
+
+			t1 = e1.get_component
+			"Transform"
+			t2 = e2.get_component
+			"Transform"
+
+			if t1 then z1 = t1.z_order
+			if t2 then z2 = t2.z_order
+
+			if z1 > z2 then
+				temp = this.entities[j]
+				this.entities[j] = this.entities[j + 1]
+				this.entities[j + 1] = temp
+			end if
+		end for
+	end for
+end function
+
+Scene.clear = function
+	for i in range(0, this.entities.len)
+		this.entities[i].destroy
+	end for
+	this.entities = []
+	this.next_entity_id = 0
+end function
+
+Scene.get_entity_count = function
+	return this.entities.len
+end function
+
+Scene.set_active = function(active)
+	this.active = active
+end function
+
+Scene.set_enabled = function(enabled)
+	this.enabled = enabled
+end function
+
+SceneManager = {}
+
+SceneManager.create = function
+	this.scenes = []
+	this.active_scene = null
+	return this
+end function
+
+SceneManager.add_scene = function(scene)
+	if this.scenes.len >= 16 then
+		return false
+	end if
+	this.scenes.push scene
+	if this.active_scene == null then
+		this.active_scene = scene
+	end if
+	return true
+end function
+
+SceneManager.remove_scene = function(scene)
+	for i in range(0, this.scenes.len)
+		if this.scenes[i] == scene then
+			scene.clear
+			this.scenes.remove i
+			return true
+		end if
+	end for
+	return false
+end function
+
+SceneManager.get_scene = function(name)
+	for i in range(0, this.scenes.len)
+		if this.scenes[i].name == name then
+			return this.scenes[i]
+		end if
+	end for
+	return null
+end function
+
+SceneManager.set_active_scene = function(scene)
+	this.active_scene = scene
+end function
+
+SceneManager.get_active_scene = function
+	return this.active_scene
+end function
+
+SceneManager.update = function(delta_time)
+	if this.active_scene then
+		this.active_scene.update delta_time
+	end if
+end function
+
+SceneManager.render = function(screen)
+	if this.active_scene then
+		this.active_scene.render screen
+	end if
+end function
