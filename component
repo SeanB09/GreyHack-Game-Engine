@@ -1,0 +1,188 @@
+// COMPONENT.SRC - Base component class for entity-component-system
+
+Component = {}
+
+Component.create = function(name)
+	comp = {}
+	comp.name = name
+	comp.entity = null
+	comp.enabled = true
+
+	// Copy methods from Component prototype
+	comp.on_enable = Component.on_enable
+	comp.on_disable = Component.on_disable
+	comp.on_add = Component.on_add
+	comp.on_remove = Component.on_remove
+	comp.update = Component.update
+	comp.on_render = Component.on_render
+	comp.on_collision = Component.on_collision
+	comp.on_message = Component.on_message
+	comp.set_enabled = Component.set_enabled
+	comp.get_entity = Component.get_entity
+	comp.send_message = Component.send_message
+
+	return comp
+end function
+
+Component.on_enable = function
+	// Override in subclass
+end function
+
+Component.on_disable = function
+	// Override in subclass
+end function
+
+Component.on_add = function(entity)
+	// Override in subclass
+	this.entity = entity
+end function
+
+Component.on_remove = function
+	// Override in subclass
+end function
+
+Component.update = function(delta_time)
+	// Override in subclass
+end function
+
+Component.on_render = function(screen)
+	// Override in subclass
+end function
+
+Component.on_collision = function(other)
+	// Override in subclass
+end function
+
+Component.on_message = function(message, data)
+	// Override in subclass
+end function
+
+Component.set_enabled = function(enabled)
+	if enabled == this.enabled then return 
+	this.enabled = enabled
+	if enabled then
+		this.on_enable
+	else
+		this.on_disable
+	end if
+end function
+
+Component.get_entity = function
+	return this.entity
+end function
+
+Component.send_message = function(message, data)
+	if this.entity then
+		this.entity.send_message_to_components this, message, data
+	end if
+end function
+
+// Transform component (position, scale, rotation)
+TransformComponent = {}
+
+TransformComponent.create = function
+	comp = Component.create("Transform")
+	comp.x = 0
+	comp.y = 0
+	comp.scale_x = 1
+	comp.scale_y = 1
+	comp.rotation = 0
+	comp.z_order = 0
+	comp.set_position = TransformComponent.set_position
+	comp.get_position = TransformComponent.get_position
+	comp.translate = TransformComponent.translate
+	return comp
+end function
+
+TransformComponent.set_position = function(x, y)
+	this.x = x
+	this.y = y
+end function
+
+TransformComponent.get_position = function
+	return {
+		"x": this.x,
+		"y": this.y,
+	}
+end function
+
+TransformComponent.translate = function(dx, dy)
+	this.x = this.x + dx
+	this.y = this.y + dy
+end function
+
+// Velocity component
+VelocityComponent = {}
+
+VelocityComponent.create = function
+	comp = Component.create("Velocity")
+	comp.vx = 0
+	comp.vy = 0
+	comp.set_velocity = VelocityComponent.set_velocity
+	comp.update = VelocityComponent.update
+	return comp
+end function
+
+VelocityComponent.set_velocity = function(vx, vy)
+	this.vx = vx
+	this.vy = vy
+end function
+
+VelocityComponent.update = function(delta_time)
+	if not this.entity then return 
+	transform = this.entity.get_component("Transform")
+	if transform then
+		transform.translate this.vx * delta_time, this.vy * delta_time
+	end if
+end function
+
+// Sprite component
+SpriteComponent = {}
+
+SpriteComponent.create = function(sprite)
+	comp = Component.create("Sprite")
+	comp.sprite = sprite
+	comp.tint = "#FFFFFF"
+	comp.on_render = SpriteComponent.on_render
+	return comp
+end function
+
+SpriteComponent.on_render = function(screen)
+	if not this.entity then return 
+	transform = this.entity.get_component("Transform")
+	if transform then
+		this.sprite.draw screen, transform.x, transform.y
+	end if
+end function
+
+// Collider component
+ColliderComponent = {}
+
+ColliderComponent.create = function(width, height)
+	comp = Component.create("Collider")
+	comp.width = width
+	comp.height = height
+	comp.collision_type = 1
+	comp.get_bounds = ColliderComponent.get_bounds
+	comp.check_collision = ColliderComponent.check_collision
+	return comp
+end function
+
+ColliderComponent.get_bounds = function
+	if not this.entity then return null
+	transform = this.entity.get_component("Transform")
+	if not transform then return null
+	return {
+		"x": transform.x,
+		"y": transform.y,
+		"width": this.width,
+		"height": this.height,
+	}
+end function
+
+ColliderComponent.check_collision = function(other)
+	bounds1 = this.get_bounds
+	bounds2 = other.get_bounds
+	if not bounds1 or not bounds2 then return false
+	return rect_intersects(bounds1, bounds2)
+end function
