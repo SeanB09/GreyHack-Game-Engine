@@ -1,0 +1,156 @@
+// SPRITE.SRC - Sprite definition and drawing system
+
+Sprite = {}
+
+Sprite.create = function(char, color, width, height)
+	this.char = char
+	this.color = color
+	this.width = width
+	this.height = height
+	this.data = []
+	this.rotation = 0
+	this.scale = 1
+	return this
+end function
+
+Sprite.set_pixel = function(x, y, char, color)
+	if x < 0 or x >= this.width or y < 0 or y >= this.height then
+		return false
+	end if
+	if this.data.len == 0 then
+		for yy in range(0, this.height)
+			row = []
+			for xx in range(0, this.width)
+				row.push {
+					"char": " ",
+					"color": "#FFFFFF",
+				}
+			end for
+			this.data.push row
+		end for
+	end if
+	this.data[y][x].char = char
+	this.data[y][x].color = color
+	return true
+end function
+
+Sprite.get_pixel = function(x, y)
+	if x < 0 or x >= this.width or y < 0 or y >= this.height then
+		return null
+	end if
+	if this.data.len == 0 then
+		return {
+			"char": this.char,
+			"color": this.color,
+		}
+	end if
+	return this.data[y][x]
+end function
+
+Sprite.draw = function(screen, x, y)
+	if this.data.len == 0 then
+		// Simple sprite (single character)
+		screen.put_char(
+			x,
+			y,
+			this.char,
+			this.color)
+	else
+		// Detailed sprite
+		for yy in range(0, this.height)
+			for xx in range(0, this.width)
+				pixel = this.data[yy][xx]
+				screen.put_char(
+					x + xx,
+					y + yy,
+					pixel.char,
+					pixel.color)
+			end for
+		end for
+	end if
+end function
+
+Sprite.clone = function
+	sprite = Sprite.create(
+		this.char,
+		this.color,
+		this.width,
+		this.height)
+	sprite.data = this.data
+	sprite.rotation = this.rotation
+	sprite.scale = this.scale
+	return sprite
+end function
+
+// Helper to create common sprites
+create_box_sprite = function(width, height, char)
+	sprite = Sprite.create(
+		char,
+		"#FFFFFF",
+		width,
+		height)
+	for yy in range(0, height)
+		for xx in range(0, width)
+			is_border = yy == 0 or yy == height - 1 or xx == 0 or xx == width - 1
+			if is_border then
+				sprite.set_pixel(
+					xx,
+					yy,
+					"+",
+					"#FFFFFF")
+			else
+				sprite.set_pixel(
+					xx,
+					yy,
+					" ",
+					"#FFFFFF")
+			end if
+		end for
+	end for
+	return sprite
+end function
+
+create_circle_sprite = function(radius, char)
+	w = radius * 2 + 1
+	h = radius * 2 + 1
+	sprite = Sprite.create(
+		char,
+		"#FFFFFF",
+		w,
+		h)
+
+	for yy in range(0, h)
+		for xx in range(0, w)
+			dy = yy - radius
+			dx = xx - radius
+			dist = (dx * dx + dy * dy) ^ 0.5
+			if dist <= radius then
+				sprite.set_pixel(
+					xx,
+					yy,
+					"*",
+					"#FFFFFF")
+			end if
+		end for
+	end for
+
+	return sprite
+end function
+
+create_text_sprite = function(text, color)
+	w = text.len
+	h = 1
+	sprite = Sprite.create(
+		" ",
+		color,
+		w,
+		h)
+	for i in range(0, text.len)
+		sprite.set_pixel(
+			i,
+			0,
+			text[i],
+			color)
+	end for
+	return sprite
+end function
