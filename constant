@@ -1,0 +1,47 @@
+// CONSTANTS.SRC - Engine configuration constants
+// Adjust these based on target hardware
+
+ENGINE_VERSION = "1.0.0"
+
+// Screen & Terminal constraints
+TERMINAL_MAX_CHARS = 2000
+SCRIPT_MAX_CHARS = 80000
+DEFAULT_FRAME_RATE = 60
+DEFAULT_FRAME_TIME = 1 / DEFAULT_FRAME_RATE
+
+// Screen dimensions (standard terminal)
+DEFAULT_WIDTH = 80
+DEFAULT_HEIGHT = 24
+
+// Limits
+MAX_ENTITIES = 1000
+MAX_COMPONENTS_PER_ENTITY = 16
+MAX_SCENES = 16
+MAX_TERMINALS = 8
+MAX_INPUT_QUEUE = 64
+
+// Physics
+GRAVITY = 9.81
+PHYSICS_TIME_STEP = 0.016
+
+// Input
+INPUT_BUFFER_SIZE = 64
+
+// Entity tags (for filtering)
+TAG_PLAYER = "player"
+TAG_ENEMY = "enemy"
+TAG_PROJECTILE = "projectile"
+TAG_UI = "ui"
+TAG_OBSTACLE = "obstacle"
+
+// Layers (rendering order)
+LAYER_BACKGROUND = 0
+LAYER_GAME = 1
+LAYER_EFFECT = 2
+LAYER_UI = 3
+
+// Error codes
+ERR_OK = 0
+ERR_NO_SPACE = 1
+ERR_INVALID_PARAM = 2
+ERR_NO_TERMINAL = 3
