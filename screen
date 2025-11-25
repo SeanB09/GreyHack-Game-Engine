@@ -1,0 +1,164 @@
+// SCREEN.SRC - 2D rendering system with drawing primitives
+// Supports multiple terminals with dirty-rect tracking
+
+Screen = {}
+
+Screen.create = function(term_manager, width, height)
+	this.term_manager = term_manager
+	this.width = width
+	this.height = height
+	this.framebuffer = []
+	this.clear_char = " "
+	this.clear_color = "#FFFFFF"
+	this.dirty = true
+	this.init_framebuffer
+	return this
+end function
+
+Screen.init_framebuffer = function
+	this.framebuffer = []
+	for y in range(0, this.height)
+		row = []
+		for x in range(0, this.width)
+			row.push " "
+		end for
+		this.framebuffer.push row
+	end for
+end function
+
+Screen.clear = function
+	this.init_framebuffer
+	this.dirty = true
+end function
+
+Screen.put_char = function(x, y, char, color)
+	if x < 0 or x >= this.width or y < 0 or y >= this.height then
+		return false
+	end if
+	if this.framebuffer[y][x] != char then
+		this.framebuffer[y][x] = char
+		this.dirty = true
+	end if
+	return true
+end function
+
+Screen.put_text = function(x, y, text, color)
+	for i in range(0, text.len)
+		char = text[i]
+		if not this.put_char(
+			x + i,
+			y,
+			char,
+			color) then
+			return false
+		end if
+	end for
+	return true
+end function
+
+Screen.draw_line = function(x1, y1, x2, y2, char)
+	// Bresenham's line algorithm (simplified)
+	dx = (x2 - x1).abs
+	dy = (y2 - y1).abs
+	sx = 1
+	sy = 1
+	if x1 > x2 then sx = -1
+	if y1 > y2 then sy = -1
+	err = dx - dy
+	x = x1
+	y = y1
+
+	while true
+		this.put_char x, y, char
+		if x == x2 and y == y2 then break
+		e2 = err * 2
+		if e2 > -dy then
+			err = err - dy
+			x = x + sx
+		end if
+		if e2 < dx then
+			err = err + dx
+			y = y + sy
+		end if
+	end while
+end function
+
+Screen.draw_box = function(x, y, w, h, char)
+	// Draw rectangular border
+	for i in range(0, w)
+		this.put_char x + i, y, char
+		this.put_char x + i, y + h - 1, char
+	end for
+	for i in range(0, h)
+		this.put_char x, y + i, char
+		this.put_char x + w - 1, y + i, char
+	end for
+end function
+
+Screen.fill_box = function(x, y, w, h, char)
+	for yy in range(0, h)
+		for xx in range(0, w)
+			this.put_char x + xx, y + yy, char
+		end for
+	end for
+end function
+
+Screen.draw_circle = function(cx, cy, radius, char)
+	// Midpoint circle algorithm (simplified)
+	x = radius
+	y = 0
+	d = 3 - 2 * radius
+
+	while x >= y
+		this.put_char cx + x, cy + y, char
+		this.put_char cx - x, cy + y, char
+		this.put_char cx + x, cy - y, char
+		this.put_char cx - x, cy - y, char
+		this.put_char cx + y, cy + x, char
+		this.put_char cx - y, cy + x, char
+		this.put_char cx + y, cy - x, char
+		this.put_char cx - y, cy - x, char
+
+		if d < 0 then
+			d = d + 4 * y + 6
+		else
+			d = d + 4 * (y - x) + 10
+			x = x - 1
+		end if
+		y = y + 1
+	end while
+end function
+
+Screen.render = function
+	if not this.dirty then return 
+
+	term = this.term_manager.get_active
+	if not term then return 
+
+	term.clear
+
+	for y in range(0, this.height)
+		line = ""
+		for x in range(0, this.width)
+			line = line + this.framebuffer[y][x]
+		end for
+		term.write_line line
+	end for
+
+	term.flush
+	this.dirty = false
+end function
+
+Screen.get_pixel = function(x, y)
+	if x < 0 or x >= this.width or y < 0 or y >= this.height then
+		return null
+	end if
+	return this.framebuffer[y][x]
+end function
+
+Screen.set_size = function(w, h)
+	this.width = w
+	this.height = h
+	this.init_framebuffer
+	this.dirty = true
+end function
