@@ -1,0 +1,179 @@
+// ENTITY.SRC - GameObject with component system
+
+Entity = {}
+
+Entity.create = function(x, y, char)
+	this.id = 0
+	this.name = "Entity"
+	this.active = true
+	this.components = []
+	this.children = []
+	this.parent = null
+	this.tags = []
+
+	// Add transform component by default
+	transform = TransformComponent.create
+	transform.x = x
+	transform.y = y
+	this.add_component transform
+
+	return this
+end function
+
+Entity.add_component = function(component)
+	if this.components.len >= 16 then
+		return false
+	end if
+	component.on_add this
+	this.components.push component
+	return true
+end function
+
+Entity.remove_component = function(name)
+	for i in range(0, this.components.len)
+		if this.components[i].name == name then
+			this.components[i].on_remove
+			this.components.remove i
+			return true
+		end if
+	end for
+	return false
+end function
+
+Entity.get_component = function(name)
+	for i in range(0, this.components.len)
+		if this.components[i].name == name then
+			return this.components[i]
+		end if
+	end for
+	return null
+end function
+
+Entity.add_child = function(entity)
+	if entity.parent then
+		entity.parent.remove_child entity
+	end if
+	entity.parent = this
+	this.children.push entity
+	return true
+end function
+
+Entity.remove_child = function(entity)
+	for i in range(0, this.children.len)
+		if this.children[i] == entity then
+			entity.parent = null
+			this.children.remove i
+			return true
+		end if
+	end for
+	return false
+end function
+
+Entity.get_child = function(index)
+	if index < 0 or index >= this.children.len then
+		return null
+	end if
+	return this.children[index]
+end function
+
+Entity.add_tag = function(tag)
+	for i in range(0, this.tags.len)
+		if this.tags[i] == tag then
+			return false
+		end if
+	end for
+	this.tags.push tag
+	return true
+end function
+
+Entity.has_tag = function(tag)
+	for i in range(0, this.tags.len)
+		if this.tags[i] == tag then
+			return true
+		end if
+	end for
+	return false
+end function
+
+Entity.update = function(delta_time)
+	if not this.active then return 
+
+	for i in range(0, this.components.len)
+		comp = this.components[i]
+		if comp.enabled then
+			comp.update delta_time
+		end if
+	end for
+
+	for i in range(0, this.children.len)
+		this.children[i].update delta_time
+	end for
+end function
+
+Entity.render = function(screen)
+	if not this.active then return 
+
+	for i in range(0, this.components.len)
+		comp = this.components[i]
+		if comp.enabled then
+			comp.on_render screen
+		end if
+	end for
+
+	for i in range(0, this.children.len)
+		this.children[i].render screen
+	end for
+end function
+
+Entity.send_message = function(message, data)
+	for i in range(0, this.components.len)
+		this.components[i].on_message message, data
+	end for
+end function
+
+Entity.send_message_to_components = function(sender, message, data)
+	for i in range(0, this.components.len)
+		if this.components[i] != sender then
+			this.components[i].on_message message, data
+		end if
+	end for
+end function
+
+Entity.set_active = function(active)
+	this.active = active
+end function
+
+Entity.set_position = function(x, y)
+	transform = this.get_component
+	"Transform"
+	if transform then
+		transform.set_position x, y
+	end if
+end function
+
+Entity.get_position = function
+	transform = this.get_component
+	"Transform"
+	if transform then
+		return transform.get_position
+	end if
+	return {
+		"x": 0,
+		"y": 0,
+	}
+end function
+
+Entity.destroy = function
+	this.active = false
+	for i in range(0, this.children.len)
+		this.children[i].destroy
+	end for
+end function
+
+Entity.get_component_count = function
+	return this.components.len
+end function
+
+Entity.get_child_count = function
+	return this.children.len
+end function
