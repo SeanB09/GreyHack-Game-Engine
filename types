@@ -1,0 +1,83 @@
+// TYPES.SRC - Type definitions and enums
+
+// Component lifecycle states
+COMPONENT_STATE_ENABLED = 1
+COMPONENT_STATE_DISABLED = 2
+
+// Entity states
+ENTITY_STATE_ACTIVE = 1
+ENTITY_STATE_INACTIVE = 2
+ENTITY_STATE_DESTROYED = 3
+
+// Input types
+INPUT_TYPE_KEYBOARD = 1
+INPUT_TYPE_MOUSE = 2
+
+// Input states
+INPUT_STATE_PRESSED = 1
+INPUT_STATE_RELEASED = 2
+INPUT_STATE_HELD = 3
+
+// Key codes (common ASCII)
+KEY_ESC = 27
+KEY_SPACE = 32
+KEY_UP = 200
+KEY_DOWN = 208
+KEY_LEFT = 203
+KEY_RIGHT = 205
+KEY_ENTER = 13
+KEY_BACKSPACE = 8
+KEY_DELETE = 211
+KEY_HOME = 199
+KEY_END = 207
+
+// Mouse buttons
+MOUSE_LEFT = 1
+MOUSE_RIGHT = 2
+MOUSE_MIDDLE = 3
+
+// Collision response types
+COLLISION_NONE = 0
+COLLISION_TRIGGER = 1
+COLLISION_SOLID = 2
+
+// Rendering blend modes
+BLEND_NORMAL = 0
+BLEND_ADD = 1
+BLEND_MULTIPLY = 2
+BLEND_SCREEN = 3
+
+create_transform = function
+	return {
+		"x": 0,
+		"y": 0,
+		"scale_x": 1,
+		"scale_y": 1,
+		"rotation": 0,
+		"z_order": 0,
+	}
+end function
+
+create_rect = function(x, y, w, h)
+	return {
+		"x": x,
+		"y": y,
+		"width": w,
+		"height": h,
+	}
+end function
+
+create_size = function(w, h)
+	return {
+		"width": w,
+		"height": h,
+	}
+end function
+
+rect_contains = function(rect, x, y)
+	return x >= rect.x and x < rect.x + rect.width and y >= rect.y and y < rect.y + rect.height
+end function
+
+rect_intersects = function(r1, r2)
+	return not (r1.x + r1.width < r2.x or r1.x > r2.x + r2.width or r1.y + r1.height < r2.y or r1.y > r2.y + r2.height)
+end function
