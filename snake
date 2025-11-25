@@ -1,0 +1,316 @@
+// SNAKE.SRC - Simple Snake game example using Game Engine
+// Demonstrates: Entity system, Components, Input, Scene management
+
+// Custom player component
+SnakeComponent = {}
+SnakeComponent.create = function
+	comp = Component.create("Snake")
+	comp.direction = {
+		"x": 1,
+		"y": 0,
+	}
+	comp.next_direction = {
+		"x": 1,
+		"y": 0,
+	}
+	comp.segments = []
+	comp.grow_pending = false
+	return comp
+end function
+
+SnakeComponent.on_add = function(entity)
+	this.entity = entity
+	// Initialize snake body (head + 3 segments)
+	transform = entity.get_component
+	"Transform"
+	if transform then
+		for i in range(0, 4)
+			segment = {
+				"x": transform.x - i,
+				"y": transform.y,
+			}
+			this.segments.push segment
+		end for
+	end if
+end function
+
+SnakeComponent.set_direction = function(dx, dy)
+	// Prevent 180-degree turns
+	if dx != 0 and this.direction.x == 0 then
+		this.next_direction = {
+			"x": dx,
+			"y": dy,
+		}
+	else if dy != 0 and this.direction.y == 0 then
+		this.next_direction = {
+			"x": dx,
+			"y": dy,
+		}
+	end if
+end function
+
+SnakeComponent.update = function(delta_time)
+	this.direction = this.next_direction
+
+	// Move snake
+	head = this.segments[0]
+	new_head = {
+		"x": head.x + this.direction.x,
+		"y": head.y + this.direction.y,
+	}
+
+	this.segments.remove this.segments.len - 1
+	this.segments.insert 0, new_head
+
+	// Update entity position to head
+	transform = this.entity.get_component
+	"Transform"
+	if transform then
+		transform.x = new_head.x
+		transform.y = new_head.y
+	end if
+end function
+
+SnakeComponent.on_render = function(screen)
+	// Render head
+	if this.segments.len > 0 then
+		head = this.segments[0]
+		screen.put_char(
+			head.x,
+			head.y,
+			"@",
+			"#00FF00")
+
+		// Render body
+		for i in range(1, this.segments.len)
+			segment = this.segments[i]
+			char = "*"
+			color = "#008000"
+			screen.put_char(
+				segment.x,
+				segment.y,
+				char,
+				color)
+		end for
+	end if
+end function
+
+SnakeComponent.grow = function
+	this.grow_pending = true
+end function
+
+SnakeComponent.get_head = function
+	if this.segments.len > 0 then
+		return this.segments[0]
+	end if
+	return null
+end function
+
+SnakeComponent.check_collision = function
+	head = this.get_head
+	if not head then return false
+
+	// Wall collision
+	if head.x < 0 or head.x >= 80 or head.y < 0 or head.y >= 24 then
+		return true
+	end if
+
+	// Self collision
+	for i in range(4, this.segments.len)
+		segment = this.segments[i]
+		if segment.x == head.x and segment.y == head.y then
+			return true
+		end if
+	end for
+
+	return false
+end function
+
+// Food component
+FoodComponent = {}
+FoodComponent.create = function
+	comp = Component.create("Food")
+	comp.x = 0
+	comp.y = 0
+	comp.eaten = false
+	return comp
+end function
+
+FoodComponent.on_render = function(screen)
+	if not this.eaten then
+		screen.put_char(
+			this.x,
+			this.y,
+			"$",
+			"#FFFF00")
+	end if
+end function
+
+FoodComponent.spawn = function
+	this.x = 10 + (20 % 60)
+	this.y = 5 + (15 % 20)
+	this.eaten = false
+end function
+
+// Main Snake Game
+SnakeGame = {}
+
+SnakeGame.create = function(engine)
+	this.engine = engine
+	this.running = true
+	this.score = 0
+	this.game_over = false
+	return this
+end function
+
+SnakeGame.initialize = function
+	scene = Scene.create("GameScene")
+
+	// Create snake
+	snake_entity = Entity.create(40, 12, "@")
+	snake_entity.name = "Snake"
+	snake_entity.add_tag TAG_PLAYER
+
+	snake_comp = SnakeComponent.create
+	snake_entity.add_component snake_comp
+	this.snake = snake_comp
+
+	scene.add_entity snake_entity
+
+	// Create food
+	food_entity = Entity.create(50, 15, "$")
+	food_entity.name = "Food"
+	food_comp = FoodComponent.create
+	food_entity.add_component food_comp
+	food_comp.spawn
+	this.food = food_comp
+
+	scene.add_entity food_entity
+
+	this.engine.add_scene scene
+	this.engine.set_active_scene scene
+end function
+
+SnakeGame.handle_input = function
+	input = this.engine.get_input_manager
+
+	if input.is_key_down(203) then // LEFT
+		this.snake.set_direction -1, 0
+	end if
+	if input.is_key_down(205) then // RIGHT
+		this.snake.set_direction 1, 0
+	end if
+	if input.is_key_down(200) then // UP
+		this.snake.set_direction 0, -1
+	end if
+	if input.is_key_down(208) then // DOWN
+		this.snake.set_direction 0, 1
+	end if
+	if input.is_key_down(27) then // ESC - quit
+		this.running = false
+	end if
+end function
+
+SnakeGame.check_collisions = function
+	head = this.snake.get_head
+
+	// Snake-food collision
+	if head.x == this.food.x and head.y == this.food.y then
+		this.score = this.score + 10
+		this.snake.grow
+		this.food.spawn
+	end if
+
+	// Snake-self collision
+	if this.snake.check_collision then
+		this.game_over = true
+		this.running = false
+	end if
+end function
+
+SnakeGame.update = function(delta_time)
+	if this.game_over then return 
+	this.handle_input
+	this.check_collisions
+end function
+
+SnakeGame.render_ui = function(screen)
+	screen.put_text(
+		0,
+		0,
+		"SNAKE GAME",
+		"#FFFF00")
+	score_text = "Score: " + this.score
+	screen.put_text(
+		60,
+		0,
+		score_text,
+		"#FFFFFF")
+
+	if this.game_over then
+		screen.put_text(
+			30,
+			12,
+			"GAME OVER",
+			"#FF0000")
+		screen.put_text(
+			25,
+			14,
+			"Press ESC to quit",
+			"#FFFFFF")
+	end if
+end function
+
+SnakeGame.run = function
+	this.initialize
+	this.engine.start
+
+	frame_time = 1 / 15 // Slower FPS for Snake
+	move_counter = 0
+
+	while this.running
+		start_time = time
+
+		this.engine.get_input_manager.clear
+		this.update frame_time
+
+		// Only move snake every 2 frames for gameplay speed
+		move_counter = move_counter + 1
+		if move_counter >= 2 then
+			snake_entity = this.engine.get_active_scene.find_entity_by_name
+			"Snake"
+			if snake_entity then
+				snake_comp = snake_entity.get_component
+				"Snake"
+				if snake_comp then
+					snake_comp.update frame_time
+				end if
+			end if
+			move_counter = 0
+		end if
+
+		screen = this.engine.get_screen
+		screen.clear
+		this.engine.get_scene_manager.render screen
+		this.render_ui screen
+		screen.render
+
+		// Frame limiting
+		elapsed = time - start_time
+		if elapsed < frame_time then
+			sleep frame_time - elapsed
+		end if
+	end while
+
+	this.engine.shutdown
+end function
+
+
+
+get_computer = get_shell.host_computer
+term_manager = TerminalManager.create
+term_manager.add_terminal(get_computer.terminal)
+engine = Engine.create(term_manager, 80, 24)
+// Entry point
+game = SnakeGame.create(engine)
+game.run
