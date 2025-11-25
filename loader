@@ -1,0 +1,35 @@
+// /root/GameEngine/loader.gs
+// One place to import all engine modules + your game as text files
+
+import = function(path)
+    // Do nothing; all modules are imported explicitly below.
+end function
+
+// 2) Core utilities
+import_code("/root/GameEngine/core/vector.src")
+import_code("/root/GameEngine/core/color.src")
+import_code("/root/GameEngine/core/constants.src")
+import_code("/root/GameEngine/core/types.src")
+
+// 3) Rendering
+import_code("/root/GameEngine/rendering/terminal.src")
+import_code("/root/GameEngine/rendering/sprite.src")
+import_code("/root/GameEngine/rendering/screen.src")
+
+// 4) Entity system
+import_code("/root/GameEngine/entity/component.src")
+import_code("/root/GameEngine/entity/entity.src")
+import_code("/root/GameEngine/entity/scene.src")
+
+// 5) Input
+import_code("/root/GameEngine/input/input.src")
+
+// 6) Engine core
+import_code("/root/GameEngine/engine.src")
+
+// 7) Your Snake game
+import_code("/root/GameEngine/examples/snake.src")
+
+// After this, whatever `snake.src` does at the bottom
+// (game = SnakeGame.create(engine); game.run)
+// becomes the entry point of the whole program.
